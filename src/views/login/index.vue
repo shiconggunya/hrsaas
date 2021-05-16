@@ -70,14 +70,14 @@
 
 <script>
 import { validMobile } from "@/utils/validate";
-
+import { mapActions } from "vuex"; //辅助函数
 export default {
   name: "Login",
   data() {
     const validateMobile = (rule, value, callback) => {
       //校验成功 callback();
       //校验失败 callback(new Error(""));
-     validMobile(value) ? callback() : callback(new Error("手机号格式不正确"));
+      validMobile(value) ? callback() : callback(new Error("手机号格式不正确"));
     };
 
     return {
@@ -86,17 +86,18 @@ export default {
         mobile: "13800000002",
         password: "123456",
       },
-      loginRules: { //表单校验规则
+      loginRules: {
+        //表单校验规则
         //validator 自定义函数
         //账号校验
         mobile: [
-          { required: true, trigger: "blur", message:'手机号不能为空' },
-          { validator:validateMobile, trigger: "blur", },
+          { required: true, trigger: "blur", message: "手机号不能为空" },
+          { validator: validateMobile, trigger: "blur" },
         ],
         //密码校验
         password: [
-          { required: true, trigger: "blur", message:'密码不能为空'  },
-          {min:6,max:16, trigger: "blur",message:'密码长度在6-6位之间'}
+          { required: true, trigger: "blur", message: "密码不能为空" },
+          { min: 6, max: 16, trigger: "blur", message: "密码长度在6-6位之间" },
         ],
       },
       loading: false,
@@ -113,6 +114,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions(["user/login"]), //引入方法
     showPwd() {
       if (this.passwordType === "password") {
         this.passwordType = "";
@@ -124,21 +126,23 @@ export default {
       });
     },
     handleLogin() {
-      this.$refs.loginForm.validate((valid) => {
-        if (valid) {
-          this.loading = true;
-          this.$store
-            .dispatch("user/login", this.loginForm)
-            .then(() => {
-              this.$router.push({ path: this.redirect || "/" });
-              this.loading = false;
-            })
-            .catch(() => {
-              this.loading = false;
-            });
-        } else {
-          console.log("error submit!!");
-          return false;
+      //表单的手动校验
+      this.$refs.loginForm.validate(async (isOk) => {
+        if (isOk) {
+          try {
+            this.loading = true; //开启转圈
+            //只有校验通过了, 我们才去调用action
+            //async标记的函数实际上是一个promise对象
+            await this["user/login"](this.loginForm);
+
+            //应该成功之后在跳转主页
+            this.$router.push("/");
+          } catch (error) {
+            console.log(error);
+          } finally{
+            //不论try 还是 then ,都关闭转圈
+            this.loading = false; //开启转圈
+          }
         }
       });
     },

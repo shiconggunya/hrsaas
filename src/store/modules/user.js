@@ -26,7 +26,7 @@ const actions ={
   async login(context,data){
     //调用api接口
     const result = await login(data) //拿到token
-    
+    console.log(result);
     //掉用mutations里的方法修改state
     context.commit('setToken',result)  //设置token
 
